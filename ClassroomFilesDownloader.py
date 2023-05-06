@@ -14,10 +14,12 @@ import os.path
 from os import path
 import pprint
 
+OUT_DIR = './out/'
+
 def main():
 
     service = get_classroom_service()
-    courses = service.courses().list(pageSize=20).execute()
+    courses = service.courses().list(pageSize=1).execute()
     for course in courses['courses']:
         print(course['name'])
     
@@ -28,10 +30,10 @@ def main():
         course_name = course['name']
         course_id = course['id']
         print("Downloading files for course : ", course_name)
-        if not (path.exists(course_name)):
-            os.mkdir('./' + course_name)
-            os.mkdir('./' +course_name+ "/cours")
-            os.mkdir('./' + course_name+"/td")
+        if not (path.exists(OUT_DIR + course_name)):
+            os.mkdir(OUT_DIR + course_name)
+            os.mkdir(OUT_DIR +course_name+ "/cours")
+            os.mkdir(OUT_DIR + course_name+"/td")
         else:
             print("{} Already exists ".format(course_name))
 
@@ -39,9 +41,12 @@ def main():
             courseId=course_id).execute()
         work = service.courses().courseWork().list(
             courseId=course_id).execute()
+        materials = service.courses().courseWorkMaterials().list(
+            courseId=course_id).execute()
 
         downd_files = downd_files + download_annonc_files(anoncs, course_name)
         downd_files = downd_files + download_works_files(work, course_name)
+        downd_files = downd_files + download_course_work_materials_files(materials, course_name)
     pprint.pprint(downd_files)
 
 def get_classroom_service():
@@ -83,7 +88,7 @@ def get_classroom_service():
         print('An error occurred: %s' % error)
 
 
-def download_file(file_id, file_name, course_name):
+def download_file(file_id, file_path):
 
     SCOPES = ['https://www.googleapis.com/auth/drive']
     """Shows basic usage of the Drive v3 API.
@@ -124,7 +129,7 @@ def download_file(file_id, file_name, course_name):
 
         fh.seek(0)
 
-        with open(os.path.join('./', course_name, file_name), 'wb') as f:
+        with open(os.path.join(OUT_DIR, file_path), 'wb') as f:
             f.write(fh.read())
             f.close()
     except HttpError as error:
@@ -136,7 +141,7 @@ def download_annonc_files(announcements, course_name):
     annonc_list = announcements.keys()
     downloaded = list()
     if (len(annonc_list) != 0):
-        present_files = getListOfFiles(os.path.join('./', course_name))
+        present_files = getListOfFiles(os.path.join(OUT_DIR, course_name))
 
         for announcement in announcements['announcements']:
             try:  #if this announcements contain a file then do this
@@ -146,11 +151,11 @@ def download_annonc_files(announcements, course_name):
                     extension = (
                         os.path.splitext(file_name)
                     )[1]  #the extension exists in second elemnts of returned tuple
-                    path_str = os.path.join('./', course_name, file_name)
+                    path_str = os.path.join(OUT_DIR, course_name, file_name)
 
                     if ((valid(extension[1:])) and (file_name not in present_files)) :
                         print("DOWNLOADING " ,file_name)
-                        download_file(file_id, file_name, course_name)
+                        download_file(file_id, path_str)
                         downloaded.append("Annonoucemet :  "+course_name +' : ' + file_name)                        
                     elif (file_name in present_files):
                         print(file_name, "already exists")
@@ -166,7 +171,7 @@ def download_works_files(works, course_name):
     works_list = works.keys()
     downloaded = list()
     if (len(works_list) != 0):
-        present_files = getListOfFiles(os.path.join('./', course_name))
+        present_files = getListOfFiles(os.path.join(OUT_DIR, course_name))
 
         for work in works['courseWork']:
             try:  #if this announcements contain a file then do this
@@ -181,10 +186,10 @@ def download_works_files(works, course_name):
                     extension = (
                         os.path.splitext(file_name)
                     )[1]  #the extension exists in second elemnts of returned tuple
-                    path_str = os.path.join('./', course_name, file_name)
+                    path_str = os.path.join(OUT_DIR, course_name, file_name)
                     if valid(extension[1:]) and (file_name not in present_files) :
                         print("DOWNLOADING " ,file_name)
-                        download_file(file_id, file_name, course_name)
+                        download_file(file_id, path_str)
                         downloaded.append("Devoir :  "+course_name +' : ' + file_name)                        
                     elif (file_name in present_files):
                         print(file_name, "already exists")
@@ -197,11 +202,50 @@ def download_works_files(works, course_name):
                 continue
     return downloaded
 
+def download_course_work_materials_files(workMaterial, course_name):
+    works_list = workMaterial.keys()
+    downloaded = list()
+    if (len(works_list) != 0):
+
+        for work in workMaterial['courseWorkMaterial']:
+            try:  #if this announcements contain a file then do this
+                title = work['title']
+                material_path = f'{OUT_DIR}{course_name}/{title}'
+                if not (path.exists(material_path)):
+                    os.mkdir(material_path)
+                present_files = getListOfFiles(os.path.join(OUT_DIR, course_name, title))
+                for val in work['materials']:
+                    file_id = val['driveFile']['driveFile']['id']
+                    file_name = val['driveFile']['driveFile']['title']
+
+                    if (file_name[0:10] == "[Template]"):
+                        file_altern_link = val['driveFile']['driveFile']['alternateLink']
+
+                        file_id = file_altern_link[file_altern_link.find('=')+1:]
+                    extension = (
+                        os.path.splitext(file_name)
+                    )[1]  #the extension exists in second elemnts of returned tuple
+                    path_str = os.path.join(OUT_DIR, course_name, title, file_name)
+                    if valid(extension[1:]) and (file_name not in present_files) :
+                        print("DOWNLOADING " ,file_name)
+                        download_file(file_id, path_str)
+                        downloaded.append("Devoir :  "+course_name +' : ' + file_name)                        
+                    elif (file_name in present_files):
+                        print(file_name, "already exists")
+                    elif not valid(extension[1:]):
+                        print('Unsupported file type: ', extension[1:] )
+                    else:
+                        print("Something went wrong")
+
+            except KeyError as e:
+                continue
+    return downloaded
 
 def valid(ch):
     return ch in [
         'pdf', 'docx', 'pptx', 'png', 'jpg', 'html', 'css', 'js', 'java',
-        'class', 'txt', 'r', 'm', ' sql', 'doc', 'mp3', 'rar', 'zip', 'py', 'c'
+        'class', 'txt', 'r', 'm', ' sql', 'doc', 'mp3', 'rar', 'zip', 'py', 'c',
+        'mp4', 'ppt', 'xlsx'
     ]
 
 
