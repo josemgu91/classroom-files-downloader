@@ -26,7 +26,8 @@ How to setup the necessary files for the script?
     SCOPES = [
     'https://www.googleapis.com/auth/classroom.courses.readonly',
     'https://www.googleapis.com/auth/classroom.announcements.readonly',
-    'https://www.googleapis.com/auth/classroom.student-submissions.me.readonly'
+    'https://www.googleapis.com/auth/classroom.student-submissions.me.readonly',
+    'https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly'
     ]
     For Google Drive API we will need this one :
     SCOPES = ['https://www.googleapis.com/auth/drive']

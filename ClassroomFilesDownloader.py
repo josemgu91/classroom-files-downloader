@@ -49,7 +49,8 @@ def get_classroom_service():
     SCOPES = [
         'https://www.googleapis.com/auth/classroom.courses.readonly',
         'https://www.googleapis.com/auth/classroom.announcements.readonly',
-        'https://www.googleapis.com/auth/classroom.student-submissions.me.readonly'
+        'https://www.googleapis.com/auth/classroom.student-submissions.me.readonly',
+        'https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly'
     ]
     """Shows basic usage of the Classroom API.
     Prints the names of the first 10 courses the user has access to.
