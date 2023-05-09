@@ -129,7 +129,7 @@ def download_file(file_id, file_path):
 
         fh.seek(0)
 
-        with open(os.path.join(OUT_DIR, file_path), 'wb') as f:
+        with open(file_path, 'wb') as f:
             f.write(fh.read())
             f.close()
     except HttpError as error:
