@@ -209,7 +209,7 @@ def download_course_work_materials_files(workMaterial, course_name):
 
         for work in workMaterial['courseWorkMaterial']:
             try:  #if this announcements contain a file then do this
-                title = work['title']
+                title = work['title'].replace('/','-')
                 material_path = f'{OUT_DIR}{course_name}/{title}'
                 if not (path.exists(material_path)):
                     os.mkdir(material_path)
